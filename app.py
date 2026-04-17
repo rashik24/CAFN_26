@@ -171,7 +171,13 @@ st.write("User GEOID:", user_geoid)
 
 st.write("ODM total rows:", len(odm_df))
 st.write("Unique GEOIDs in ODM:", odm_df["geoid"].nunique())
+st.write("User GEOID:", user_geoid, type(user_geoid))
+st.write("ODM dtype:", odm_df["geoid"].dtype)
 
+# Show a few ODM values WITH type
+sample_vals = odm_df["geoid"].head(5).tolist()
+st.write("Sample ODM GEOIDs:", sample_vals)
+st.write("Types:", [type(x) for x in sample_vals])
 subset = odm_df[odm_df["geoid"] == user_geoid]
 
 st.write("Rows in ODM for this GEOID:", len(subset))
