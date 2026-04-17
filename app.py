@@ -208,35 +208,102 @@ show_choice_only = st.checkbox("Show only Choice Pantries", value=False)
 st.markdown("### Select Categories")
 filter_1_vals = sorted(df["filter_1"].dropna().unique()) if "filter_1" in df.columns else []
 selected_filter_1 = st.multiselect("", filter_1_vals, label_visibility="collapsed", key="filter_1_multi")
+if selected_filter_1:
+    st.markdown("### ℹ️ Category Description")
+    for val in selected_filter_1:
+        st.info(f"**{val}**: {filter1_desc.get(val, 'No description available.')}")
+# for val in filter_1_vals:
+#     color = "#1f77b4"
+#     is_selected = val in selected_filter_1
+#     st.markdown(
+#         f"<div style='padding: 6px; background-color:{color if is_selected else '#e0e0e0'}; "
+#         f"color:white; border-radius:5px; margin-bottom:5px'>{val}</div>",
+#         unsafe_allow_html=True
+#     )
 
 for val in filter_1_vals:
     color = "#1f77b4"
     is_selected = val in selected_filter_1
+    desc = filter1_desc.get(val, "")
+
     st.markdown(
-        f"<div style='padding: 6px; background-color:{color if is_selected else '#e0e0e0'}; "
-        f"color:white; border-radius:5px; margin-bottom:5px'>{val}</div>",
+        f"""
+        <div title="{desc}" 
+             style='padding: 6px; 
+                    background-color:{color if is_selected else '#e0e0e0'};
+                    color:white; 
+                    border-radius:5px; 
+                    margin-bottom:5px'>
+             {val}
+        </div>
+        """,
         unsafe_allow_html=True
     )
 
 filtered_df = df[df["filter_1"].isin(selected_filter_1)] if selected_filter_1 else df.copy()
 
+# if not filtered_df.empty and "filter_2" in filtered_df.columns:
+#     st.markdown("### Select Subcategories")
+#     filter_2_vals = sorted(filtered_df["filter_2"].dropna().unique())
+#     #selected_filter_2 = st.multiselect("", filter_2_vals, label_visibility="collapsed", key="filter_2_multi")
+#     selected_filter_2 = st.multiselect("Filter 2", filter_2_vals, label_visibility="collapsed", key="filter_2_multi")
+
+#     for val in filter_2_vals:
+#         color = "#ff7f0e"
+#         is_selected = val in selected_filter_2
+#         st.markdown(
+#             f"<div style='padding: 6px; background-color:{color if is_selected else '#e0e0e0'}; "
+#             f"color:white; border-radius:5px; margin-bottom:5px'>{val}</div>",
+#             unsafe_allow_html=True
+#         )
+
+#     if selected_filter_2:
+#         filtered_df = filtered_df[filtered_df["filter_2"].isin(selected_filter_2)]
 if not filtered_df.empty and "filter_2" in filtered_df.columns:
     st.markdown("### Select Subcategories")
-    filter_2_vals = sorted(filtered_df["filter_2"].dropna().unique())
-    #selected_filter_2 = st.multiselect("", filter_2_vals, label_visibility="collapsed", key="filter_2_multi")
-    selected_filter_2 = st.multiselect("Filter 2", filter_2_vals, label_visibility="collapsed", key="filter_2_multi")
 
+    filter_2_vals = sorted(filtered_df["filter_2"].dropna().unique())
+
+    selected_filter_2 = st.multiselect(
+        "Filter 2",
+        filter_2_vals,
+        label_visibility="collapsed",
+        key="filter_2_multi"
+    )
+
+    # 🔹 Display clickable/hover blocks
     for val in filter_2_vals:
         color = "#ff7f0e"
         is_selected = val in selected_filter_2
+        desc = filter2_desc.get(val, "")
+
         st.markdown(
-            f"<div style='padding: 6px; background-color:{color if is_selected else '#e0e0e0'}; "
-            f"color:white; border-radius:5px; margin-bottom:5px'>{val}</div>",
+            f"""
+            <div title="{desc}" 
+                 style='padding: 6px; 
+                        background-color:{color if is_selected else '#e0e0e0'};
+                        color:white; 
+                        border-radius:5px; 
+                        margin-bottom:5px'>
+                 {val}
+            </div>
+            """,
             unsafe_allow_html=True
         )
 
+    # ✅ APPLY FILTER (outside loop)
     if selected_filter_2:
-        filtered_df = filtered_df[filtered_df["filter_2"].isin(selected_filter_2)]
+        filtered_df = filtered_df[
+            filtered_df["filter_2"].isin(selected_filter_2)
+        ]
+
+    # ✅ SHOW DESCRIPTION (outside loop)
+    if selected_filter_2:
+        st.markdown("### ℹ️ Subcategory Description")
+        for val in selected_filter_2:
+            st.info(
+                f"**{val}**: {filter2_desc.get(val, 'No description available.')}"
+            )
 
 if show_choice_only and "choice" in filtered_df.columns:
     filtered_df = filtered_df[filtered_df["choice"] == 1]
