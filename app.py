@@ -65,7 +65,7 @@ st.set_page_config(page_title="CAFN Food Pantries", layout="wide")
 st.title("CAFN Food Finder")
 
 # Set your Mapbox token as environment variable
-os.environ["MAPBOX_API_KEY"] = "pk.eyJ1IjoicnNpZGRpcTIiLCJhIjoiY21nMTRkZ21nMGptNzJrb2phOWpyMmpvZiJ9.qbQ-Pn8jaPA7ABdccrTXsg"
+os.environ["MAPBOX_API_KEY"] = "pk.eyJ1IjoicnNpZGRpcTIiLCJhIjoiY21jbjcwNWtkMHV5bzJpb2pnM3QxaDFtMyJ9.6T6i_QFuKQatpGaCFUvCKg"
 
 HOURS_CSV   = "cafn_hourly.csv"              # columns: agency,city,address,week,day,hour,window,Name,Latitude,Longitude
 ODM_CSV     = "ODM CAFN 2.csv"                 # your precomputed travel times & filters
