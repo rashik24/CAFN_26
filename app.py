@@ -132,7 +132,7 @@ if mode == "Address":
     if user_address:
         try:
             results = geocoder.geocode(user_address)
-            st.write("Geocode raw result:", results)
+            #st.write("Geocode raw result:", results)
             if results:
                 user_lat = results[0]["geometry"]["lat"]
                 user_lon = results[0]["geometry"]["lng"]
@@ -165,7 +165,7 @@ elif mode == "ZIP Code" and zip_code:
     odm_df = zip_filtered.drop_duplicates(subset=["agency name", "address"])
     user_geoid = None
 
-
+st.write("GEOID",user_geoid)
 # ───────────────────────────────────────────────────────────────────────
 # TRAVEL TIME THRESHOLD
 # ───────────────────────────────────────────────────────────────────────
