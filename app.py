@@ -9,7 +9,23 @@ except ImportError:
     import geopandas_lite as gpd
 
 gpd.options.io_engine = "pyogrio"   # ✅ ensures no Fiona/GDAL dependency
+filter1_desc = {
+    "Brown Bag": "Pre-packed grocery bags distributed to individuals or families.",
+    "Food Distribution": "General food distribution events providing groceries.",
+    "Food Distribution (Pickup)": "Scheduled pickup-based food distribution.",
+    "Mobile Food Distribution": "Food distribution at rotating or temporary locations.",
+    "Other": "Additional services not categorized elsewhere.",
+    "Young adult programs": "Programs specifically designed for young adults.",
+    "Youth Programs": "Programs supporting children and teenagers."
+}
 
+filter2_desc = {
+    "Feeding Program": "Programs providing prepared meals.",
+    "Feeding Programs": "Multiple or recurring feeding services.",
+    "Food Pantries": "Locations where groceries are distributed for home use.",
+    "Shelters": "Facilities providing temporary housing and meals.",
+    "Soup Kitchen": "Locations serving hot, ready-to-eat meals."
+}
 from shapely.geometry import Point
 from opencage.geocoder import OpenCageGeocode
 from dateutil import parser
