@@ -117,12 +117,14 @@ if "county" in odm_df.columns:
 odm_df["agency name"] = odm_df["agency name"].astype(str).str.strip()
 odm_df["address"] = odm_df["address"].astype(str).str.strip()
 if "geoid" in odm_df.columns:
-    odm_df["geoid"] = pd.to_numeric(odm_df["geoid"], errors="coerce").fillna(-1).astype(int)
+    #odm_df["geoid"] = pd.to_numeric(odm_df["geoid"], errors="coerce").fillna(-1).astype(int)
+    odm_df["geoid"] = odm_df["geoid"].astype(str).str.strip()
 
 # Load tracts and ensure lon/lat CRS
 tracts_gdf = gpd.read_file(TRACTS_SHP).to_crs(epsg=4326)
 if tracts_gdf["GEOID"].dtype == object:
-    tracts_gdf["GEOID"] = tracts_gdf["GEOID"].astype(int)
+    #tracts_gdf["GEOID"] = tracts_gdf["GEOID"].astype(int)
+    tracts_gdf["GEOID"] = tracts_gdf["GEOID"].astype(str).str.strip()
 
 # ───────────────────────────────────────────────────────────────────────
 # GEOCODE OR ZIP FILTER
