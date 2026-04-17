@@ -164,31 +164,8 @@ elif mode == "ZIP Code" and zip_code:
         st.stop()
     odm_df = zip_filtered.drop_duplicates(subset=["agency name", "address"])
     user_geoid = None
-st.write("DEBUG START")
 
-st.write("User GEOID VALUE:", user_geoid)
-st.write("User GEOID TYPE:", type(user_geoid))
 
-st.write("ODM GEOID TYPE:", odm_df["geoid"].dtype)
-
-# Convert BOTH to string (safe)
-odm_df["geoid"] = odm_df["geoid"].astype(str).str.strip()
-user_geoid = str(user_geoid).strip()
-
-# Now check match
-match_exists = user_geoid in set(odm_df["geoid"])
-st.write("Does GEOID exist in ODM?", match_exists)
-
-st.write("Rows in ODM for this GEOID:", len(subset))
-
-if not subset.empty:
-    st.write("Min travel time in this GEOID:", subset["total_traveltime"].min())
-    st.write("Max travel time in this GEOID:", subset["total_traveltime"].max())
-else:
-    st.write("⚠️ No rows for this GEOID at all")
-
-st.write("User threshold:", user_threshold)
-st.write("DEBUG END")
 # ───────────────────────────────────────────────────────────────────────
 # TRAVEL TIME THRESHOLD
 # ───────────────────────────────────────────────────────────────────────
