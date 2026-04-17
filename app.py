@@ -166,19 +166,18 @@ elif mode == "ZIP Code" and zip_code:
     user_geoid = None
 st.write("DEBUG START")
 
-st.write("User lat/lon:", user_lat, user_lon)
-st.write("User GEOID:", user_geoid)
+st.write("User GEOID VALUE:", user_geoid)
+st.write("User GEOID TYPE:", type(user_geoid))
 
-st.write("ODM total rows:", len(odm_df))
-st.write("Unique GEOIDs in ODM:", odm_df["geoid"].nunique())
-st.write("User GEOID:", user_geoid, type(user_geoid))
-st.write("ODM dtype:", odm_df["geoid"].dtype)
+st.write("ODM GEOID TYPE:", odm_df["geoid"].dtype)
 
-# Show a few ODM values WITH type
-sample_vals = odm_df["geoid"].head(5).tolist()
-st.write("Sample ODM GEOIDs:", sample_vals)
-st.write("Types:", [type(x) for x in sample_vals])
-subset = odm_df[odm_df["geoid"] == user_geoid]
+# Convert BOTH to string (safe)
+odm_df["geoid"] = odm_df["geoid"].astype(str).str.strip()
+user_geoid = str(user_geoid).strip()
+
+# Now check match
+match_exists = user_geoid in set(odm_df["geoid"])
+st.write("Does GEOID exist in ODM?", match_exists)
 
 st.write("Rows in ODM for this GEOID:", len(subset))
 
