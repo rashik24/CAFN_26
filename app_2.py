@@ -744,10 +744,12 @@ if "odm_df" in st.session_state:
         "ODM_CAFN_generated.csv",
         "text/csv",
     )
+
 # ============================================================
-# STEP 3 — STATIC HOURLY FILE
+# STEP 4 — STATIC HOURLY FILE
 # ============================================================
-st.header("3. Load Static Hourly File")
+
+st.header("4. Load Static Hourly File")
 try:
     hourly_df = normalize_hours(pd.read_csv(HOURS_CSV))
     st.success(f"Loaded {HOURS_CSV}: {len(hourly_df):,} rows")
@@ -775,37 +777,7 @@ except Exception as e:
 #     except Exception as e:
 #         st.error(f"Could not load tract geometry: {e}")
 
-st.subheader("4. Census Data")
 
-use_default_census = st.checkbox(
-    "Use default Census files",
-    value=True,
-)
-
-if use_default_census:
-    TRACT_CENTROID_FILE = "ODM FBCENC 2.csv"
-    TRACT_GEOMETRY_FILE = "cb_2023_37_tract_500k.shp"
-
-    st.info("Using the default Census files bundled with the app.")
-
-else:
-    uploaded_centroids = st.file_uploader(
-        "Upload updated GEOID/tract centroid file",
-        type=["csv", "xlsx", "xls"],
-        key="census_centroids",
-    )
-
-    uploaded_tracts = st.file_uploader(
-        "Upload updated Census tract geometry",
-        type=["zip", "geojson", "gpkg"],
-        key="census_geometry",
-    )
-
-    if uploaded_centroids is None or uploaded_tracts is None:
-        st.warning(
-            "Upload both the tract centroid file and tract geometry file."
-        )
-        st.stop()
 
 # ============================================================
 # STEP 5 — FINAL FOOD FINDER
