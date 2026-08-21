@@ -301,40 +301,317 @@ if "agencies_geocoded" in st.session_state:
                        "geocoded_agencies.csv", "text/csv")
 
 # ============================================================
-# STEP 2 — GEOID SOURCE + ODM GENERATION
+# STEP 2 — CENSUS DATA
 # ============================================================
-st.header("2. Upload GEOID Source and Build ODM")
-st.caption("Upload the tract source containing GEOID and tract latitude/longitude (for example GEOID, YCoord, XCoord).")
-tract_centroid_upload = st.file_uploader("Upload GEOID / tract-coordinate source", type=["csv", "xlsx", "xls"], key="tract_centroid")
 
-if tract_centroid_upload is not None and "agencies_geocoded" in st.session_state:
+st.header("2. Census Data")
+
+use_default_census = st.checkbox(
+    "Use default Census files",
+    value=True,
+    key="use_default_census",
+)
+
+if use_default_census:
+
+    TRACT_CENTROID_FILE = "ODM FBCENC 2.csv"
+    TRACT_GEOMETRY_FILE = "cb_2023_37_tract_500k.shp"
+
     try:
-        tract_source = read_table(tract_centroid_upload)
-        st.dataframe(tract_source.head(25), use_container_width=True)
+        # ----------------------------------------------------
+        # Load default GEOID / centroid file
+        # ----------------------------------------------------
+        tract_source = pd.read_csv(
+            TRACT_CENTROID_FILE,
+            dtype={"GEOID": str},
+        )
+
         tc = list(tract_source.columns)
-        geoid_col = st.selectbox("GEOID column", tc, index=tc.index("GEOID") if "GEOID" in tc else 0)
-        lat_candidates = [c for c in tc if str(c).lower() in ["ycoord", "latitude", "lat", "tract_lat_col"]]
-        lon_candidates = [c for c in tc if str(c).lower() in ["xcoord", "longitude", "lon", "lng", "tract_lng_col"]]
-        tract_lat_col = st.selectbox("Tract latitude column", tc, index=tc.index(lat_candidates[0]) if lat_candidates else 0)
-        tract_lon_col = st.selectbox("Tract longitude column", tc, index=tc.index(lon_candidates[0]) if lon_candidates else 0)
-        road_factor = st.number_input("Road-distance factor", 1.0, 3.0, ROAD_FACTOR_DEFAULT, 0.05)
-        average_speed = st.number_input("Average speed (mph)", 5.0, 80.0, AVERAGE_SPEED_DEFAULT, 1.0)
 
-        if st.button("Generate ODM", type="primary"):
-            pb = st.progress(0); msg = st.empty()
-            odm = build_approx_odm(tract_source, st.session_state["agencies_geocoded"], road_factor,
-                                   average_speed, geoid_col, tract_lat_col, tract_lon_col, pb, msg)
-            pb.empty(); msg.empty()
-            st.session_state["odm_df"] = odm
-            st.success(f"Generated {len(odm):,} tract-agency ODM records.")
+        geoid_col = (
+            "GEOID"
+            if "GEOID" in tc
+            else tc[0]
+        )
+
+        lat_candidates = [
+            c for c in tc
+            if str(c).strip().lower()
+            in [
+                "ycoord",
+                "latitude",
+                "lat",
+                "tract_lat_col",
+            ]
+        ]
+
+        lon_candidates = [
+            c for c in tc
+            if str(c).strip().lower()
+            in [
+                "xcoord",
+                "longitude",
+                "lon",
+                "lng",
+                "tract_lng_col",
+            ]
+        ]
+
+        if not lat_candidates:
+            raise ValueError(
+                "Could not identify tract latitude column."
+            )
+
+        if not lon_candidates:
+            raise ValueError(
+                "Could not identify tract longitude column."
+            )
+
+        tract_lat_col = lat_candidates[0]
+        tract_lon_col = lon_candidates[0]
+
+        # Standardize
+        tracts_df = tract_source[
+            [
+                geoid_col,
+                tract_lat_col,
+                tract_lon_col,
+            ]
+        ].copy()
+
+        tracts_df.columns = [
+            "GEOID",
+            "TRACT_LAT_COL",
+            "TRACT_LNG_COL",
+        ]
+
+        tracts_df["GEOID"] = clean_geoid(
+            tracts_df["GEOID"]
+        )
+
+        tracts_df["TRACT_LAT_COL"] = pd.to_numeric(
+            tracts_df["TRACT_LAT_COL"],
+            errors="coerce",
+        )
+
+        tracts_df["TRACT_LNG_COL"] = pd.to_numeric(
+            tracts_df["TRACT_LNG_COL"],
+            errors="coerce",
+        )
+
+        tracts_df = tracts_df.dropna(
+            subset=[
+                "GEOID",
+                "TRACT_LAT_COL",
+                "TRACT_LNG_COL",
+            ]
+        )
+
+        tracts_df = tracts_df.drop_duplicates(
+            subset=["GEOID"]
+        )
+
+        st.session_state["tracts_df"] = tracts_df
+
+        # ----------------------------------------------------
+        # Load default Census tract polygons
+        # ----------------------------------------------------
+        tracts_gdf = gpd.read_file(
+            TRACT_GEOMETRY_FILE
+        )
+
+        if tracts_gdf.crs is None:
+            raise ValueError(
+                "Census tract geometry has no CRS."
+            )
+
+        if str(tracts_gdf.crs).lower() != "epsg:4326":
+            tracts_gdf = tracts_gdf.to_crs(
+                epsg=4326
+            )
+
+        if "GEOID" not in tracts_gdf.columns:
+            raise ValueError(
+                "Default Census geometry is missing GEOID."
+            )
+
+        tracts_gdf["GEOID_STD"] = clean_geoid(
+            tracts_gdf["GEOID"]
+        )
+
+        st.session_state["tracts_gdf"] = tracts_gdf
+
+        st.success(
+            f"Default Census data loaded: "
+            f"{len(tracts_df):,} tract coordinates and "
+            f"{len(tracts_gdf):,} tract polygons."
+        )
+
     except Exception as e:
-        st.error(f"ODM generation failed: {e}")
+        st.error(
+            f"Could not load default Census files: {e}"
+        )
 
-if "odm_df" in st.session_state:
-    odm_df = st.session_state["odm_df"]
-    st.dataframe(odm_df.head(250), use_container_width=True)
-    st.download_button("Download ODM", odm_df.to_csv(index=False).encode("utf-8-sig"), "ODM_CAFN_generated.csv", "text/csv")
+else:
 
+    uploaded_centroids = st.file_uploader(
+        "Upload updated GEOID / tract centroid file",
+        type=["csv", "xlsx", "xls"],
+        key="census_centroids",
+    )
+
+    uploaded_tracts = st.file_uploader(
+        "Upload updated Census tract geometry",
+        type=["zip", "geojson", "json", "gpkg"],
+        key="census_geometry",
+    )
+
+    if (
+        uploaded_centroids is not None
+        and uploaded_tracts is not None
+    ):
+        try:
+            tract_source = read_table(
+                uploaded_centroids
+            )
+
+            tc = list(tract_source.columns)
+
+            geoid_col = st.selectbox(
+                "GEOID column",
+                tc,
+                index=(
+                    tc.index("GEOID")
+                    if "GEOID" in tc
+                    else 0
+                ),
+                key="updated_geoid_col",
+            )
+
+            lat_candidates = [
+                c for c in tc
+                if str(c).strip().lower()
+                in [
+                    "ycoord",
+                    "latitude",
+                    "lat",
+                    "tract_lat_col",
+                ]
+            ]
+
+            lon_candidates = [
+                c for c in tc
+                if str(c).strip().lower()
+                in [
+                    "xcoord",
+                    "longitude",
+                    "lon",
+                    "lng",
+                    "tract_lng_col",
+                ]
+            ]
+
+            tract_lat_col = st.selectbox(
+                "Tract latitude column",
+                tc,
+                index=(
+                    tc.index(lat_candidates[0])
+                    if lat_candidates
+                    else 0
+                ),
+                key="updated_tract_lat",
+            )
+
+            tract_lon_col = st.selectbox(
+                "Tract longitude column",
+                tc,
+                index=(
+                    tc.index(lon_candidates[0])
+                    if lon_candidates
+                    else 0
+                ),
+                key="updated_tract_lon",
+            )
+
+            tracts_df = tract_source[
+                [
+                    geoid_col,
+                    tract_lat_col,
+                    tract_lon_col,
+                ]
+            ].copy()
+
+            tracts_df.columns = [
+                "GEOID",
+                "TRACT_LAT_COL",
+                "TRACT_LNG_COL",
+            ]
+
+            tracts_df["GEOID"] = clean_geoid(
+                tracts_df["GEOID"]
+            )
+
+            tracts_df["TRACT_LAT_COL"] = (
+                pd.to_numeric(
+                    tracts_df["TRACT_LAT_COL"],
+                    errors="coerce",
+                )
+            )
+
+            tracts_df["TRACT_LNG_COL"] = (
+                pd.to_numeric(
+                    tracts_df["TRACT_LNG_COL"],
+                    errors="coerce",
+                )
+            )
+
+            tracts_df = tracts_df.dropna(
+                subset=[
+                    "GEOID",
+                    "TRACT_LAT_COL",
+                    "TRACT_LNG_COL",
+                ]
+            ).drop_duplicates("GEOID")
+
+            st.session_state["tracts_df"] = tracts_df
+
+            tracts_gdf = load_uploaded_geometry(
+                uploaded_tracts
+            )
+
+            gcols = list(
+                tracts_gdf.columns
+            )
+
+            geometry_geoid_col = st.selectbox(
+                "Geometry GEOID column",
+                gcols,
+                index=(
+                    gcols.index("GEOID")
+                    if "GEOID" in gcols
+                    else 0
+                ),
+                key="geometry_geoid_col",
+            )
+
+            tracts_gdf["GEOID_STD"] = clean_geoid(
+                tracts_gdf[
+                    geometry_geoid_col
+                ]
+            )
+
+            st.session_state[
+                "tracts_gdf"
+            ] = tracts_gdf
+
+            st.success(
+                "Updated Census data loaded."
+            )
+
+        except Exception as e:
+            st.error(
+                f"Could not load updated Census data: {e}"
+            )
 # ============================================================
 # STEP 3 — STATIC HOURLY FILE
 # ============================================================
