@@ -613,6 +613,138 @@ else:
                 f"Could not load updated Census data: {e}"
             )
 # ============================================================
+# STEP 3 — GENERATE ODM
+# ============================================================
+
+st.header("3. Generate ODM")
+
+if (
+    "agencies_geocoded" not in st.session_state
+    or "tracts_df" not in st.session_state
+):
+
+    st.info(
+        "Geocode agencies and load Census data first."
+    )
+
+else:
+
+    agencies_df = (
+        st.session_state[
+            "agencies_geocoded"
+        ].copy()
+    )
+
+    tracts_df = (
+        st.session_state[
+            "tracts_df"
+        ].copy()
+    )
+
+    col1, col2 = st.columns(2)
+
+    with col1:
+        road_factor = st.number_input(
+            "Road-distance factor",
+            min_value=1.0,
+            max_value=3.0,
+            value=ROAD_FACTOR_DEFAULT,
+            step=0.05,
+            key="road_factor",
+        )
+
+    with col2:
+        average_speed = st.number_input(
+            "Average speed (mph)",
+            min_value=5.0,
+            max_value=80.0,
+            value=AVERAGE_SPEED_DEFAULT,
+            step=1.0,
+            key="average_speed",
+        )
+
+    c1, c2, c3 = st.columns(3)
+
+    c1.metric(
+        "Agencies",
+        f"{len(agencies_df):,}",
+    )
+
+    c2.metric(
+        "Census tracts",
+        f"{len(tracts_df):,}",
+    )
+
+    c3.metric(
+        "Expected ODM rows",
+        f"{len(agencies_df) * len(tracts_df):,}",
+    )
+
+    if st.button(
+        "Generate ODM",
+        type="primary",
+        key="generate_odm",
+    ):
+
+        pb = st.progress(0)
+        msg = st.empty()
+
+        try:
+            odm = build_approx_odm(
+                tracts_df,
+                agencies_df,
+                road_factor,
+                average_speed,
+                "GEOID",
+                "TRACT_LAT_COL",
+                "TRACT_LNG_COL",
+                pb,
+                msg,
+            )
+
+            st.session_state[
+                "odm_df"
+            ] = odm
+
+            pb.empty()
+            msg.empty()
+
+            st.success(
+                f"Generated {len(odm):,} "
+                "tract-agency ODM records."
+            )
+
+        except Exception as e:
+            pb.empty()
+            msg.empty()
+
+            st.error(
+                f"ODM generation failed: {e}"
+            )
+
+
+if "odm_df" in st.session_state:
+
+    odm_df = (
+        st.session_state[
+            "odm_df"
+        ]
+    )
+
+    st.dataframe(
+        odm_df.head(250),
+        use_container_width=True,
+    )
+
+    st.download_button(
+        "Download ODM",
+        odm_df
+        .to_csv(index=False)
+        .encode("utf-8-sig"),
+        "ODM_CAFN_generated.csv",
+        "text/csv",
+    )
+# ============================================================
 # STEP 3 — STATIC HOURLY FILE
 # ============================================================
 st.header("3. Load Static Hourly File")
