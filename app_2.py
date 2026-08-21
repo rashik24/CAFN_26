@@ -366,7 +366,7 @@ except Exception as e:
 #     except Exception as e:
 #         st.error(f"Could not load tract geometry: {e}")
 
-st.subheader("Census Data")
+st.subheader("4. Census Data")
 
 use_default_census = st.checkbox(
     "Use default Census files",
