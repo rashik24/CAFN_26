@@ -349,22 +349,54 @@ except Exception as e:
 # ============================================================
 # STEP 4 — TRACT GEOMETRY FOR USER GEOLOCATION
 # ============================================================
-st.header("4. Upload Census Tract Geometry")
-st.caption("This geometry is used to convert the user's geocoded address into a Census tract GEOID.")
-tract_geometry_upload = st.file_uploader("Upload tract geometry", type=["zip", "geojson", "json", "gpkg"], key="tract_geometry")
+# st.header("4. Upload Census Tract Geometry")
+# st.caption("This geometry is used to convert the user's geocoded address into a Census tract GEOID.")
+# tract_geometry_upload = st.file_uploader("Upload tract geometry", type=["zip", "geojson", "json", "gpkg"], key="tract_geometry")
 
-if tract_geometry_upload is not None:
-    try:
-        tracts_gdf = load_uploaded_geometry(tract_geometry_upload)
-        gcols = list(tracts_gdf.columns)
-        geoid_geometry_col = st.selectbox("Geometry GEOID column", gcols,
-                                          index=gcols.index("GEOID") if "GEOID" in gcols else 0,
-                                          key="geometry_geoid")
-        tracts_gdf["GEOID_STD"] = clean_geoid(tracts_gdf[geoid_geometry_col])
-        st.session_state["tracts_gdf"] = tracts_gdf
-        st.success(f"Loaded {len(tracts_gdf):,} tract geometries.")
-    except Exception as e:
-        st.error(f"Could not load tract geometry: {e}")
+# if tract_geometry_upload is not None:
+#     try:
+#         tracts_gdf = load_uploaded_geometry(tract_geometry_upload)
+#         gcols = list(tracts_gdf.columns)
+#         geoid_geometry_col = st.selectbox("Geometry GEOID column", gcols,
+#                                           index=gcols.index("GEOID") if "GEOID" in gcols else 0,
+#                                           key="geometry_geoid")
+#         tracts_gdf["GEOID_STD"] = clean_geoid(tracts_gdf[geoid_geometry_col])
+#         st.session_state["tracts_gdf"] = tracts_gdf
+#         st.success(f"Loaded {len(tracts_gdf):,} tract geometries.")
+#     except Exception as e:
+#         st.error(f"Could not load tract geometry: {e}")
+
+st.subheader("Census Data")
+
+use_default_census = st.checkbox(
+    "Use default Census files",
+    value=True,
+)
+
+if use_default_census:
+    TRACT_CENTROID_FILE = "ODM FBCENC 2.csv"
+    TRACT_GEOMETRY_FILE = "cb_2023_37_tract_500k.shp"
+
+    st.info("Using the default Census files bundled with the app.")
+
+else:
+    uploaded_centroids = st.file_uploader(
+        "Upload updated GEOID/tract centroid file",
+        type=["csv", "xlsx", "xls"],
+        key="census_centroids",
+    )
+
+    uploaded_tracts = st.file_uploader(
+        "Upload updated Census tract geometry",
+        type=["zip", "geojson", "gpkg"],
+        key="census_geometry",
+    )
+
+    if uploaded_centroids is None or uploaded_tracts is None:
+        st.warning(
+            "Upload both the tract centroid file and tract geometry file."
+        )
+        st.stop()
 
 # ============================================================
 # STEP 5 — FINAL FOOD FINDER
