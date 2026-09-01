@@ -820,7 +820,7 @@ if mode == "Address":
             st.error(f"Geocoding error: {e}"); st.stop()
 else:
     zip_code = st.text_input("Enter your ZIP code:")
-    if zip_code and "zip" in odm_df.columns:
+    if zip_code and "zip code" in odm_df.columns:
         subset = odm_df[odm_df["zip code"].astype(str).str.strip() == zip_code.strip()]
         if subset.empty:
             st.warning("No agencies found in that ZIP code."); st.stop()
