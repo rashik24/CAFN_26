@@ -787,14 +787,14 @@ odm_df["agency name"] = clean_text(odm_df["agency name"])
 
 # Merge useful master attributes into ODM when they are not already present
 master_fields = [c for c in ["agency no.", "hispanic", "county", "contact", "operating hours",
-                              "filter_1", "filter_2", "choice", "zip"] if c in agencies.columns]
+                              "filter_1", "filter_2", "choice", "zip code"] if c in agencies.columns]
 if len(master_fields) > 1:
     supplement = agencies[master_fields].drop_duplicates("agency no.")
     missing_fields = [c for c in master_fields if c != "agency no." and c not in odm_df.columns]
     if missing_fields:
         odm_df = odm_df.merge(supplement[["agency no."] + missing_fields], on="agency no.", how="left")
 
-mode = st.radio("Choose input mode:", ["Address", "ZIP Code"])
+mode = st.radio("Choose input mode:", ["Address", "Zip Code"])
 user_lat = user_lon = user_geoid = None
 
 if mode == "Address":
